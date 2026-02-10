@@ -22,6 +22,11 @@ const trainingConfig = {
     }
 };
 
+// Training phase thresholds (as percentage of total weeks)
+const PHASE_BASE_END = 0.4;
+const PHASE_BUILD_END = 0.75;
+const WEEKS_PER_MONTH = 4.33; // Average weeks per month (52 weeks / 12 months)
+
 // Workout types
 const workoutTypes = {
     easy: 'Easy Run',
@@ -47,7 +52,7 @@ distanceSelect.addEventListener('change', function() {
     const distance = this.value;
     if (distance && trainingConfig[distance]) {
         const config = trainingConfig[distance];
-        const daysRecommendation = distance === 'marathon' ? '4 days' : '3 days';
+        const daysRecommendation = `${config.defaultDays} ${config.defaultDays === 1 ? 'day' : 'days'}`;
         recommendedDaysSpan.textContent = daysRecommendation;
         recommendedDurationSpan.textContent = `${config.defaultMonths} ${config.defaultMonths === 1 ? 'month' : 'months'}`;
         
@@ -78,7 +83,7 @@ function generateTrainingPlan() {
     };
 
     const config = trainingConfig[formData.distance];
-    const totalWeeks = Math.round(formData.trainingDuration * 4.33); // Approximate weeks per month
+    const totalWeeks = Math.round(formData.trainingDuration * WEEKS_PER_MONTH);
     
     // Generate plan summary
     const summaryHTML = `
@@ -145,9 +150,9 @@ function generateWeeklySchedule(formData, totalWeeks) {
 
 function getWeekPlan(weekNumber, totalWeeks, trainingDays, config) {
     const days = [];
-    const isBasePhase = weekNumber <= totalWeeks * 0.4;
-    const isBuildPhase = weekNumber > totalWeeks * 0.4 && weekNumber <= totalWeeks * 0.75;
-    const isPeakPhase = weekNumber > totalWeeks * 0.75 && weekNumber < totalWeeks - 1;
+    const isBasePhase = weekNumber <= totalWeeks * PHASE_BASE_END;
+    const isBuildPhase = weekNumber > totalWeeks * PHASE_BASE_END && weekNumber <= totalWeeks * PHASE_BUILD_END;
+    const isPeakPhase = weekNumber > totalWeeks * PHASE_BUILD_END && weekNumber < totalWeeks - 1;
     const isTaperWeek = weekNumber >= totalWeeks - 1;
     
     // Calculate base distances
@@ -223,9 +228,9 @@ function getWeekPlan(weekNumber, totalWeeks, trainingDays, config) {
 }
 
 function getWeekPhase(weekNumber, totalWeeks) {
-    if (weekNumber <= totalWeeks * 0.4) {
+    if (weekNumber <= totalWeeks * PHASE_BASE_END) {
         return ' - Base Building';
-    } else if (weekNumber <= totalWeeks * 0.75) {
+    } else if (weekNumber <= totalWeeks * PHASE_BUILD_END) {
         return ' - Build Phase';
     } else if (weekNumber < totalWeeks - 1) {
         return ' - Peak Training';
